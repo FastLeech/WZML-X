@@ -76,7 +76,7 @@ async def getTaskDetail(id: str, request: Request):
         "link": task.listener().source_url if listener else None,
         "progress": task.progress(),
         "processed_bytes": task.processed_bytes(),
-        "queued": task.queued,
+        "queued": task.queued if hasattr(task, "queued") else None,
         "size": task.size(),
         "start_time": task.start_time,
         "status": task.status(),
