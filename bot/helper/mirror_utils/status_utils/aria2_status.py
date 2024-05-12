@@ -70,7 +70,10 @@ class Aria2Status:
             return MirrorStatus.STATUS_DOWNLOADING
 
     def seeders_num(self):
-        return self.__download.num_seeders
+        try:
+            return self.__download.num_seeders
+        except KeyError:
+            return 0
 
     def leechers_num(self):
         return self.__download.connections

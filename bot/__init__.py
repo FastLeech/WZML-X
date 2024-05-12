@@ -17,6 +17,8 @@ from faulthandler import enable as faulthandler_enable
 from socket import setdefaulttimeout
 from logging import getLogger, Formatter, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
 from uvloop import install
+from uvicorn import run
+from apiserver import app as APIApp
 
 faulthandler_enable()
 install()
@@ -387,6 +389,8 @@ MEDIA_GROUP = MEDIA_GROUP.lower() == 'true'
 BASE_URL_PORT = environ.get('BASE_URL_PORT', '')
 BASE_URL_PORT = 80 if len(BASE_URL_PORT) == 0 else int(BASE_URL_PORT)
 
+API_URL_PORT = int(environ.get("API_URL_PORT", '3600'))
+
 BASE_URL = environ.get('BASE_URL', '').rstrip("/")
 if len(BASE_URL) == 0:
     log_warning('BASE_URL not provided!')
@@ -739,10 +743,14 @@ if ospath.exists('shorteners.txt'):
 if BASE_URL:
     Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent", shell=True)
 
+if API_URL_PORT:
+    Thread(target=lambda: run(APIApp, host="0.0.0.0", port=API_URL_PORT)).start()
+
 srun(["qbittorrent-nox", "-d", f"--profile={getcwd()}"])
 if not ospath.exists('.netrc'):
     with open('.netrc', 'w'):
         pass
+
 srun(["chmod", "600", ".netrc"])
 srun(["cp", ".netrc", "/root/.netrc"])
 srun(["chmod", "+x", "aria.sh"])
