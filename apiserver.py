@@ -78,10 +78,16 @@ async def getTaskDetail(id: str, request: Request):
         "processed_bytes": task.processed_bytes(),
         "queued": task.queued if hasattr(task, "queued") else None,
         "size": task.size(),
-        "start_time": task.start_time,
+        "start_time": task.start_time if hasattr(task, "start_time") else None,
         "status": task.status(),
         "user_id": task.message.from_user.id,
         "username": task.message.from_user.username,
         "name": task.message.from_user.first_name
     }
 
+
+@app.post("/cancelTask/{id}")
+async def cancelTask(request: Request):
+    if notVerified(request):
+        return
+    # TODO: Implement Cancel from GID
