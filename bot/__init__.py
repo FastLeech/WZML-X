@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import asyncio
 from tzlocal import get_localzone
 from pytz import timezone
 from datetime import datetime
@@ -13,6 +14,8 @@ from subprocess import Popen, run as srun
 from os import remove as osremove, path as ospath, environ, getcwd
 from aria2p import API as ariaAPI, Client as ariaClient
 from qbittorrentapi import Client as qbClient
+from streamer import web_server
+from aiohttp import web
 from faulthandler import enable as faulthandler_enable
 from socket import setdefaulttimeout
 from logging import getLogger, Formatter, FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info, warning as log_warning
@@ -23,6 +26,7 @@ from apiserver import app as APIApp
 faulthandler_enable()
 install()
 setdefaulttimeout(600)
+server = web.AppRunner(web_server())
 
 botStartTime = time()
 
@@ -744,7 +748,14 @@ if BASE_URL:
     Popen(f"gunicorn web.wserver:app --bind 0.0.0.0:{BASE_URL_PORT} --worker-class gevent", shell=True)
 
 if API_URL_PORT:
-    Thread(target=lambda: run(APIApp, host="0.0.0.0", port=API_URL_PORT)).start()
+
+    async def start_web_server():
+        await server.setup()
+        await web.TCPSite(server, "0.0.0.0", API_URL_PORT).start()
+        log_info("Service Started")
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(start_web_server())
 
 srun(["qbittorrent-nox", "-d", f"--profile={getcwd()}"])
 if not ospath.exists('.netrc'):
