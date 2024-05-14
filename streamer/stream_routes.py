@@ -236,7 +236,7 @@ async def getTaskDetail(request: Request):
         "status": task.status(),
         "user_id": task.message.from_user.id,
         "username": task.message.from_user.username,
-        "name": task.message.from_user.first_name,
+        "sender_name": task.message.from_user.first_name,
         "uid": listener.uid
     })
 
