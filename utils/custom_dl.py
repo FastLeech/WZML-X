@@ -4,6 +4,7 @@ import logging
 import time
 from typing import Dict, Union
 from pyrogram import Client, utils, raw
+from .constants import work_loads
 from .file_properties import get_file_ids
 from pyrogram.session import Session, Auth
 from pyrogram.errors import AuthBytesInvalid

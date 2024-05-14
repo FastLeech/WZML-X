@@ -4,7 +4,7 @@ from aiofiles import open as aiopen
 from motor.motor_asyncio import AsyncIOMotorClient
 from pymongo.errors import PyMongoError
 from dotenv import dotenv_values
-
+from datetime import datetime
 from bot import DATABASE_URL, user_data, rss_dict, LOGGER, bot_id, config_dict, aria2_options, qbit_options, bot_loop
 
 
@@ -118,6 +118,26 @@ class DbManger:
             del data['rclone']
         await self.__db.users[bot_id].replace_one({'_id': user_id}, data, upsert=True)
         self.__conn.close
+
+
+    async def get_user_history(self, user_id):
+        user = await self.__db.users.find_one({"_id": user_id})
+        if not user:
+            return []
+        return user.get("history", [])
+
+    async def add_user_history(self, user_id, data):
+        user = await self.__db.users.find_one({"_id": user_id})
+        if not user:
+            user = {}
+        history = user.get("history", [])
+        if data in history:
+            del history[history.index(data)]
+        data['time'] = int(datetime.now().timestamp())
+        history.insert(0, data)
+        user["history"] = history
+
+        await self.__db.users.replace_one({"_id": user_id}, user, upsert=True)
 
     async def update_user_doc(self, user_id, key, path=''):
         if self.__err:

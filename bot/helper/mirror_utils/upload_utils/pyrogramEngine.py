@@ -20,6 +20,7 @@ from bot.helper.telegram_helper.message_utils import sendCustomMsg, editReplyMar
 from bot.helper.ext_utils.fs_utils import clean_unwanted, is_archive, get_base_name
 from bot.helper.ext_utils.bot_utils import get_readable_file_size, is_telegram_link, is_url, sync_to_async, download_image_url
 from bot.helper.ext_utils.leech_utils import get_audio_thumb, get_media_info, get_document_type, take_ss, get_ss, get_mediainfo_link, format_filename
+from bot.helper.ext_utils.db_handler import DATABASE_URL, DbManger
 
 LOGGER = getLogger(__name__)
 getLogger("pyrogram").setLevel(ERROR)
@@ -52,6 +53,7 @@ class TgUploader:
         self.__as_doc = False
         self.__media_group = False
         self.__upload_dest = ''
+        self.__files = {}
         self.__bot_pm = False
         self.__user_id = listener.message.from_user.id
         self.__leechmsg = {}
@@ -288,10 +290,20 @@ class TgUploader:
                 LOGGER.error(f"Failed To Send in User Dump:\n{str(err)}")
 
     async def upload(self, o_files, m_size, size):
+        from bot.helper.listeners.tasks_listener import MirrorLeechListener
+
         await self.__user_settings()
         res = await self.__msg_to_reply()
         if not res:
             return
+        listener: MirrorLeechListener = self.__listener
+
+        fileMap = {
+            "name": self.name,
+            "url": listener.source_url,
+            "size": size,
+            "files": []
+        }
         isDeleted = False
         for dirpath, _, files in sorted(await sync_to_async(walk, self.__path)):
             if dirpath.endswith('/yt-dlp-thumb'):
@@ -326,6 +338,16 @@ class TgUploader:
                     self.__last_uploaded = 0
                     await self.__switching_client()
                     await self.__upload_file(cap_mono, file_)
+                    if (msg:= self.__sent_msg) and (media:= msg.document or msg.video or msg.photo):
+                        data = {"messageId": self.__sent_msg.id,
+                                "chatId": self.__sent_msg.chat.id,
+                                "name": getattr(media, "file_name", ""),
+                                "size": getattr(media, "file_size", 0)
+                        }
+                        if data not in fileMap['files']:
+                            fileMap['files'].append(
+                                data
+                            )
                     if self.__leechmsg and not isDeleted and config_dict['CLEAN_LOG_MSG']:
                         await deleteMessage(list(self.__leechmsg.values())[0])
                         isDeleted = True
@@ -364,6 +386,11 @@ class TgUploader:
         if self.__retry_error:
             await self.__listener.onUploadError('Unknown Error Occurred. Check logs & Contact Bot Owner!')
             return
+
+        if DATABASE_URL:
+            await DbManger().add_user_history(
+                self.__user_id, fileMap
+            )
         LOGGER.info(f"Leech Completed: {self.name}")
         await self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
 
