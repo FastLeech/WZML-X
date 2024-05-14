@@ -236,9 +236,17 @@ async def getTaskDetail(request: Request):
         "status": task.status(),
         "user_id": task.message.from_user.id,
         "username": task.message.from_user.username,
-        "name": task.message.from_user.first_name
+        "name": task.message.from_user.first_name,
+        "uid": listener.uid
     })
 
+@routes.get("/result")
+async def getResult(request: web.Request):
+    from bot import taskHolder
+
+    uid = request.query.get("uid")
+    result = taskHolder.get(int(uid), {})
+    return web.json_response({"results": result})
 
 @routes.post("/cancelTask/{id}")
 async def cancelTask(request: Request):

@@ -5,6 +5,7 @@ from aiofiles.os import remove as aioremove, path as aiopath, rename as aiorenam
 from os import walk, path as ospath
 from time import time
 from PIL import Image
+from bot import taskHolder
 from pyrogram.types import InputMediaVideo, InputMediaDocument, InlineKeyboardMarkup
 from pyrogram.errors import FloodWait, RPCError, PeerIdInvalid, ChannelInvalid
 from asyncio import sleep
@@ -393,6 +394,9 @@ class TgUploader:
             )
         LOGGER.info(f"Leech Completed: {self.name}")
         await self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
+        taskHolder[listener.uid] = fileMap
+        print(listener.uid)
+#        taskHolder[listener]
 
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))

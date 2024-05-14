@@ -40,6 +40,7 @@ LOGGER = getLogger(__name__)
 load_dotenv('config.env', override=True)
 
 Interval = []
+taskHolder = {}
 QbInterval = []
 QbTorrents = {}
 GLOBAL_EXTENSION_FILTER = ['aria2', '!qB']
