@@ -206,6 +206,7 @@ async def getTasks(request: Request):
 async def getTaskDetail(request: Request):
     if notVerified(request):
         return
+    from bot import taskHolder
 
     from bot.helper.ext_utils.bot_utils import getDownloadByGid
     from bot.helper.mirror_utils.status_utils.aria2_status import Aria2Status
@@ -215,6 +216,8 @@ async def getTaskDetail(request: Request):
         return web.json_response({"ok": False, "message": "INVALID_REQUEST"})
 
     task: Aria2Status = await getDownloadByGid(id)
+    if data:= taskHolder.get(id):
+        return web.json_response({"results": data}) 
     if not task:
         return web.json_response({"ok": False, "message": "Task not found!"})
     try:
@@ -237,16 +240,7 @@ async def getTaskDetail(request: Request):
         "user_id": task.message.from_user.id,
         "username": task.message.from_user.username,
         "sender_name": task.message.from_user.first_name,
-        "uid": listener.uid
-    })
-
-@routes.get("/result")
-async def getResult(request: web.Request):
-    from bot import taskHolder
-
-    uid = request.query.get("uid")
-    result = taskHolder.get(int(uid), {})
-    return web.json_response({"results": result})
+       })
 
 @routes.post("/cancelTask/{id}")
 async def cancelTask(request: Request):

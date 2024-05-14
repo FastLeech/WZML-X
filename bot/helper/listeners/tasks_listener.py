@@ -385,7 +385,7 @@ class MirrorLeechListener:
             async with download_dict_lock:
                 download_dict[self.uid] = tg_upload_status
             await update_all_messages()
-            await tg.upload(o_files, m_size, size)
+            await tg.upload(o_files, m_size, size, gid)
         elif self.upPath == 'gd':
             size = await get_path_size(up_path)
             LOGGER.info(f"Upload Name: {up_name}")

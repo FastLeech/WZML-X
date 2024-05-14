@@ -14,7 +14,7 @@ from re import match as re_match, sub as re_sub
 from natsort import natsorted
 from aioshutil import copy
 
-from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, bot, user, IS_PREMIUM_USER
+from bot import config_dict, user_data, GLOBAL_EXTENSION_FILTER, bot, user, IS_PREMIUM_USER, download_dict, download_dict_lock
 from bot.helper.themes import BotTheme
 from bot.helper.telegram_helper.button_build import ButtonMaker
 from bot.helper.telegram_helper.message_utils import sendCustomMsg, editReplyMarkup, sendMultiMessage, chat_info, deleteMessage, get_tg_link_content
@@ -290,7 +290,7 @@ class TgUploader:
             if not self.__is_cancelled:
                 LOGGER.error(f"Failed To Send in User Dump:\n{str(err)}")
 
-    async def upload(self, o_files, m_size, size):
+    async def upload(self, o_files, m_size, size, gid):
         from bot.helper.listeners.tasks_listener import MirrorLeechListener
 
         await self.__user_settings()
@@ -394,9 +394,7 @@ class TgUploader:
             )
         LOGGER.info(f"Leech Completed: {self.name}")
         await self.__listener.onUploadComplete(None, size, self.__msgs_dict, self.__total_files, self.__corrupted, self.name)
-        taskHolder[listener.uid] = fileMap
-        print(listener.uid)
-#        taskHolder[listener]
+        taskHolder[gid] = fileMap
 
     @retry(wait=wait_exponential(multiplier=2, min=4, max=8), stop=stop_after_attempt(3),
            retry=retry_if_exception_type(Exception))
