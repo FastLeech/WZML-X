@@ -4,9 +4,8 @@ from sys import executable
 from os import execl as osexecl
 from asyncio import create_subprocess_exec, gather, run as asyrun
 from uuid import uuid4
-from base64 import b64decode
+from base64 import b64decode, b16decode
 from importlib import import_module, reload
-
 from requests import get as rget
 from pytz import timezone
 from bs4 import BeautifulSoup
@@ -40,6 +39,26 @@ async def stats(client, message):
 
 @new_task
 async def start(client, message):
+    if len(message.command) > 1:
+        try:
+            hash = message.command[-1]
+            channel, messageId = b16decode(hash.encode()).decode().split(':')
+            try:
+                channel = int(
+                    channel
+                )
+            except Exception:
+                pass
+            findmessage = await bot.get_messages(
+                channel, message_ids=int(messageId)
+            )
+            if findmessage:
+                await findmessage.copy(message.chat.id)
+                return
+            else:
+                await message.reply("File not found!")
+        except Exception as er:
+            print(er)
     buttons = ButtonMaker()
     buttons.ubutton(BotTheme('ST_BN1_NAME'), BotTheme('ST_BN1_URL'))
     buttons.ubutton(BotTheme('ST_BN2_NAME'), BotTheme('ST_BN2_URL'))
